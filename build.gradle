@@ -1,0 +1,153 @@
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.google.code.findbugs:jsr305:3.0.1'
+    compile group: 'org.springframework:spring-core:5.0.4.RELEASE'
+    compile group: 'org.springframework:spring-beans:5.0.4.RELEASE'
+    compile group: 'org.springframework:spring-aop:5.0.4.RELEASE'
+    compile group: 'org.springframework:spring-context:5.0.4.RELEASE'
+    compile group: 'org.springframework.security:spring-security-rsa:1.0.5.RELEASE'
+
+    testCompile 'junit:junit:4.+'
+}
+
+test {
+    // show standard out and standard error of the test JVM(s) on the console
+    testLogging.showStandardStreams = true
+}
+
+task sourceJar(type: Jar) {
+    classifier "sources"
+    from sourceSets.main.allJava
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier "javadoc"
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives jar
+    archives sourceJar
+    archives javadocJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            customizePom(pom)
+            groupId 'com.transempiric'
+            artifactId 'simple-encryptor'
+            version '1.0.0'
+
+            from components.java
+
+            // create the sign pom artifact
+            pom.withXml {
+                def pomFile = file("${project.buildDir}/generated-pom.xml")
+                writeTo(pomFile)
+                def pomAscFile = signing.sign(pomFile).signatureFiles[0]
+                artifact(pomAscFile) {
+                    classifier = null
+                    extension = 'pom.asc'
+                }
+            }
+
+            artifact(sourceJar) {
+                classifier = 'sources'
+            }
+            artifact(javadocJar) {
+                classifier = 'javadoc'
+            }
+
+            // create the signed artifacts
+            project.tasks.signArchives.signatureFiles.each {
+                artifact(it) {
+                    def matcher = it.file =~ /-(sources|javadoc)\.jar\.asc$/
+                    if (matcher.find()) {
+                        classifier = matcher.group(1)
+                    } else {
+                        classifier = null
+                    }
+                    extension = 'jar.asc'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+            credentials {
+                username sonatypeUsername
+                password sonatypePassword
+            }
+        }
+    }
+}
+
+def customizePom(pom) {
+    pom.withXml {
+        def root = asNode()
+
+        // eliminate test-scoped dependencies (no need in maven central POMs)
+        root.dependencies.removeAll { dep ->
+            dep.scope == "test"
+        }
+
+        // add all items necessary for maven central publication
+        root.children().last() + {
+            resolveStrategy = Closure.DELEGATE_FIRST
+
+            description 'Simple Ecryptor extenstion for Spring framework'
+            name 'Simple Ecryptor Spring'
+            url 'https://github.com/TransEmpiric/simple-encryptor'
+            organization {
+                name 'Transempiric'
+                url 'https://transempiric.com'
+            }
+            issueManagement {
+                system 'GitHub'
+                url 'https://github.com/TransEmpiric/simple-encryptor/issues'
+            }
+            licenses {
+                license {
+                    name 'MIT'
+                    url 'https://github.com/TransEmpiric/simple-encryptor/LICENSE'
+                    distribution 'repo'
+                }
+            }
+            scm {
+                url 'https://github.com/mautini/schemaorg-java'
+                connection 'scm:git:git://github.com/TransEmpiric/simple-encryptor.git'
+                developerConnection 'scm:git:ssh://git@github.com:TransEmpiric/simple-encryptor.git'
+            }
+            developers {
+                developer {
+                    name 'SlowBurner'
+                }
+            }
+        }
+    }
+}
+
+model {
+    tasks.generatePomFileForMavenJavaPublication {
+        destination = file("$buildDir/generated-pom.xml")
+    }
+    tasks.publishMavenJavaPublicationToMavenLocal {
+        dependsOn project.tasks.signArchives
+    }
+    tasks.publishMavenJavaPublicationToMavenRepository {
+        dependsOn project.tasks.signArchives
+    }
+}
