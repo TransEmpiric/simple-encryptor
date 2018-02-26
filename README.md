@@ -118,5 +118,6 @@ SimpleEncryptor provides encryption support for property sources in Spring Boot 
 	
 ## Major Props to some Spring peeps
 [Dave Syer](https://github.com/dsyer/spring-security-rsa) for [spring-security-rsa](https://github.com/dsyer/spring-security-rsa) and [spring-cloud-config](https://github.com/spring-cloud/spring-cloud-config).
+<br/>
 [Ulises Bocchio](https://github.com/ulisesbocchio) for [jasypt-spring-boot](https://github.com/ulisesbocchio/jasypt-spring-boot).
 	
