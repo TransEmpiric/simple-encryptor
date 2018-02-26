@@ -30,3 +30,6 @@ nbbuild/
 dist/
 nbdist/
 .nb-gradle/
+
+### Project ###
+secring.gpg
