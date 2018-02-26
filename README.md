@@ -6,8 +6,18 @@ RSA (PUBLIC and PRIVATE keys) can be deleted or cleared after TextEncryptor inst
 SimpleEncryptor provides encryption support for property sources in Spring Boot Applications and plain old Spring.<br/>
 
 ## How to get use.
-1.  Add the simple-encryptor dependency to your project (Maven Central Coming soon):
-
+1.  Add the simple-encryptor dependency to your project (Maven Central):
+	```groovy
+	 compile("com.transempiric:simple-encryptor:1.0.0")
+	```
+	```xml
+    <dependency>
+      <groupId>com.transempiric</groupId>
+      <artifactId>simple-encryptor</artifactId>
+      <version>1.0.0</version>
+      <scope>compile</scope>
+    </dependency>
+    ```
 2.  Spring Boot property example:
 	```java
     @SpringBootApplication
@@ -64,7 +74,8 @@ SimpleEncryptor provides encryption support for property sources in Spring Boot 
                     .createInstance();
         }
     
-        
+        // Required (Hex-encoded string): Inject System property -Dsimple.encryptor.secret=497349744150726F626C656D466F72596F75546F41736B
+        // Optional (Hex-encoded string): Inject System property -Dsimple.encryptor.salt=456E63727970746F7273
         @Bean
             public TextEncryptor hexEncodingSimpleEncryptor() throws Exception {
                 return new SimpleEncryptorFactoryBean()
